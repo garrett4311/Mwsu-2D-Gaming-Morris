@@ -25,6 +25,17 @@ var play = {
 		// Death sound
 		this.sound.kill = game.add.audio('kill')
 
+		// Explode sound
+		this.sound.explode = game.add.audio('explode')
+
+		//explosion animation
+		
+		this.anims.create({
+			key: 'explode1',
+			frames: [ { key: 'explosion', frame: 0 } ],
+			frameRate: 20
+		});
+
 		// Music
 		this.music = game.add.audio('music')
 		this.music.play('', 0, 0.5, true)
@@ -34,14 +45,28 @@ var play = {
 		// Obstacles
 		this.obstacles = game.add.group()
 
+		//Bullets group
+		this.bullets = game.add.group();
+		this.bullets.enableBody = true;
+		this.bullets.physicsBodyType = Phaser.Physics.ARCADE;
+ 		this.bullets.createMultiple(5, 'bullet');
+		//this.bullets.setAll('anchor.x', 0.5);
+		//this.bullets.setAll('anchor.y', 1);
+		this.bullets.setAll('outOfBoundsKill', true);
+ 		this.bullets.setAll('checkWorldBounds', true);
+
 		// Player
-		this.player = game.add.sprite(game.width / 2, 250, 'player')
+		this.player = game.add.sprite(game.width / 2, 175, 'player')
 		game.physics.enable(this.player, Phaser.Physics.ARCADE)
 		this.player.enableBody = true
 		this.player.body.collideWorldBounds = true
 		this.player.scale.setTo(.5, .5)
 		this.player.anchor.setTo(.5, .5)
 		this.player.body.setSize(this.player.width - 10, this.player.height)
+
+		//  And some controls to play the game with
+		this.cursors = game.input.keyboard.createCursorKeys();
+		this.fireButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR); 
 
 		// Score label
 		this.bmpText = game.add.bitmapText(game.width / 2, 100, 'fontUsed', '', 150);
@@ -59,10 +84,10 @@ var play = {
 
 		// Collision
 		game.physics.arcade.overlap(this.player, this.obstacles, this.killPlayer, null, this)
+		game.physics.arcade.overlap(this.bullets, this.obstacles, this.explodeObstacle, null, this)
 
 		// Spawn enemies
 		if (frame_counter % 90 == 0) {
-			//var gap = 120
 			if(Math.random() < 0.33)
 			this.spawnObstacle(game.global.obstacle_id++, Math.random() * game.width , game.height, speed = (200 + (game.global.score * 5)), has_given_point = true)
 			else if(Math.random() < 0.5)
@@ -72,7 +97,6 @@ var play = {
 		}
 
 		if (game.global.score > 10 && frame_counter % 80 == 0) {
-			//var gap = 120
 			if(Math.random() < 0.33)
 			this.spawnObstacle(game.global.obstacle_id++, Math.random() * game.width , game.height, speed = (200 + (game.global.score * 7)), has_given_point = true)
 			else if(Math.random() < 0.5)
@@ -81,8 +105,7 @@ var play = {
 			this.spawnObstacle3(game.global.obstacle3_id++, Math.random() * game.width , game.height, speed = (200 + (game.global.score * 7)), has_given_point = true)
 		}
 
-		if (game.global.score > 30 && frame_counter % 70 == 0) {
-			//var gap = 120
+		if (game.global.score > 20 && frame_counter % 70 == 0) {
 			if(Math.random() < 0.33)
 			this.spawnObstacle(game.global.obstacle_id++, Math.random() * game.width , game.height, speed = (200 + (game.global.score * 10)), has_given_point = true)
 			else if(Math.random() < 0.5)
@@ -94,7 +117,12 @@ var play = {
 		this.move();
 
 		frame_counter++
-		game.global.score += this.scorePoint();
+
+		//Fire bullets
+  		if (this.fireButton.isDown) {
+        	this.fireBullet();
+   		}
+
 	},
 
 	//spawn birds
@@ -169,40 +197,42 @@ var play = {
 		console.log(this.obstacles.children.length);
 	},
 
-	scorePoint: function () {
-		//console.log(this.obstacles)
-		var point = 0;
-		var obstacles = this.obstacles.children;
+	explodeObstacle: function (bullet, obstacle) {
+		this.sound.explode.play('', 0, 0.5, false)
+		this.anims.play('explode1');
+		bullet.kill();
+		obstacle.kill();
 
-		for (var i = 0; i < obstacles.length; i++) {
-			if (obstacles[i].visible) {
-				// console.log("vis: ")
-				// console.log(obstacles[i].y,this.player.y);
-				let py = this.player.y;
-				let oy = obstacles[i].y;
-				let ox = obstacles[i].x;
-
-				//if player is below obstacle score point; set off flag to prevent repeats
-				if (obstacles[i].has_given_point && oy < py) { 
-					obstacles[i].has_given_point = false;
-					point++;
-					this.sound.score.play('', 0, 0.5, false)
-				}
-			}
-		}
-		return point;
+		//add increased points based on difficulty
+		if(game.global.score < 10)
+			game.global.score += 1;
+		else if(game.global.score < 20)
+			game.global.score += 2;
+		else
+			game.global.score += 3;
 	},
 
 	killPlayer: function (player) {
-
-		//issues with this
-		//game.plugins.screenShake.shake(20);
 		this.sound.kill.play('', 0, 0.5, false)
 		player.kill();
 		game.state.start('gameOver');
 
 	},
 
+	fireBullet: function() {
+		var BULLET_SPEED = -400;
+		//  Grab the first bullet we can from the pool
+		var bullet = this.bullets.getFirstExists(false);
+		if (bullet)
+		{
+		//  Make bullet come out of tip of ship with correct angle
+        var bulletOffset = 20 * Math.sin(game.math.degToRad(this.player.angle));
+        bullet.reset(this.player.x + bulletOffset, this.player.y);
+    	bullet.angle = this.player.angle;
+        game.physics.arcade.velocityFromAngle(bullet.angle - 90, BULLET_SPEED, bullet.body.velocity);
+		bullet.body.velocity.x += this.player.body.velocity.x;  
+		}
+	},
 
 	// Tap on touchscreen or click with mouse
 	onDown: function (pointer) {},
