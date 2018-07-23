@@ -28,14 +28,6 @@ var play = {
 		// Explode sound
 		this.sound.explode = game.add.audio('explode')
 
-		//explosion animation
-		
-		this.anims.create({
-			key: 'explode1',
-			frames: [ { key: 'explosion', frame: 0 } ],
-			frameRate: 20
-		});
-
 		// Music
 		this.music = game.add.audio('music')
 		this.music.play('', 0, 0.5, true)
@@ -199,9 +191,17 @@ var play = {
 
 	explodeObstacle: function (bullet, obstacle) {
 		this.sound.explode.play('', 0, 0.5, false)
-		this.anims.play('explode1');
 		bullet.kill();
 		obstacle.kill();
+
+		//creates explosion animation
+		var explosion = this.game.add.sprite (obstacle.body.x, obstacle.body.y, "bang")
+		explosion.anchor.setTo(0.5,0.5);
+		explosion.animations.add("bang", null, 60, false, true);
+		explosion.animations.play("bang");
+		
+		//remove explosion spirte (not working)
+		//this.explosion.remove(explosion);
 
 		//add increased points based on difficulty
 		if(game.global.score < 10)
