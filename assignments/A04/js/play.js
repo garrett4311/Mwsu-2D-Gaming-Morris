@@ -200,8 +200,6 @@ var play = {
 		explosion.animations.add("bang", null, 60, false, true);
 		explosion.animations.play("bang");
 		
-		//remove explosion spirte (not working)
-		//this.explosion.remove(explosion);
 
 		//add increased points based on difficulty
 		if(game.global.score < 10)
