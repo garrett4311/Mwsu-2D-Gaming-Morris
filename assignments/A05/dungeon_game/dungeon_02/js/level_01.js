@@ -57,7 +57,7 @@ var level_01 =
 	
 	move: function()
 	{
-// Each key changes the players velocity in the x or y direction
+		// Each key changes the players velocity in the x or y direction
 		// and plays the proper animation. It sets the prevDir so we can
 		// face the correct way when stopped.
 
