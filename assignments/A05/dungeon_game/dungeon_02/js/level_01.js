@@ -44,7 +44,20 @@ var level_01 =
 	update: function () 
 	{
 
-		// Each key changes the players velocity in the x or y direction
+		this.move();
+
+	},
+
+	render: function()
+	{
+		game.debug.bodyInfo(this.player, 16, 24);
+		// Instructions:
+		game.debug.text( "Use arrow keys to move sprite around.", game.width/2, game.height-10 );
+	},
+	
+	move: function()
+	{
+// Each key changes the players velocity in the x or y direction
 		// and plays the proper animation. It sets the prevDir so we can
 		// face the correct way when stopped.
 
@@ -212,15 +225,5 @@ var level_01 =
 		{
 		this.player.animations.play('dead');
 		}
-
 	},
-
-	render: function()
-	{
-		game.debug.bodyInfo(this.player, 16, 24);
-		// Instructions:
-		game.debug.text( "Use arrow keys to move sprite around.", game.width/2, game.height-10 );
-	}
-	
 }
-
