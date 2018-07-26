@@ -48,7 +48,7 @@ var level_01 =
 		// and plays the proper animation. It sets the prevDir so we can
 		// face the correct way when stopped.
 
-		// Walk E, NE, SE
+		// Walk left
 		if (k.isDown(Phaser.Keyboard.LEFT) && !k.isDown(Phaser.Keyboard.SHIFT))
 		{
 			if(k.isDown(Phaser.Keyboard.UP))
@@ -69,7 +69,7 @@ var level_01 =
 			this.prevDir = 'left'
 		}
 
-		// Walk W, NW, SW
+		// Walk right
 		if (k.isDown(Phaser.Keyboard.RIGHT) && !k.isDown(Phaser.Keyboard.SHIFT)) 
 		{
 			if(k.isDown(Phaser.Keyboard.UP))
@@ -93,15 +93,43 @@ var level_01 =
 		// Run left
 		if (k.isDown(Phaser.Keyboard.SHIFT) && k.isDown(Phaser.Keyboard.LEFT)) 
 		{
+			if(k.isDown(Phaser.Keyboard.UP))
+			{
+				this.player.body.velocity.x = -400;
+				this.player.body.velocity.y = -400;
+			}
+			else if(k.isDown(Phaser.Keyboard.DOWN))
+			{
+				this.player.body.velocity.x = -400;
+				this.player.body.velocity.y = 400;
+			}
+			else{
+				this.player.body.velocity.x = -400;
+				this.player.body.velocity.y = 0;
+			}
 			this.player.animations.play('run_left');
-			this.player.body.velocity.x = -400;
+			this.prevDir = 'left'
 		}
 
 		// Run right
 		if (k.isDown(Phaser.Keyboard.SHIFT) && k.isDown(Phaser.Keyboard.RIGHT)) 
 		{
+			if(k.isDown(Phaser.Keyboard.UP))
+			{
+				this.player.body.velocity.x = 400;
+				this.player.body.velocity.y = -400;
+			}
+			else if(k.isDown(Phaser.Keyboard.DOWN))
+			{
+				this.player.body.velocity.x = 400;
+				this.player.body.velocity.y = 400;
+			}
+			else{
+				this.player.body.velocity.x = 400;
+				this.player.body.velocity.y = 0;
+			}
 			this.player.animations.play('run_right');
-			this.player.body.velocity.x = 400;
+			this.prevDir = 'right'
 		}
 
 		//walk up
@@ -162,7 +190,7 @@ var level_01 =
 			else{
 				this.player.animations.play('jumpattack_right')
 			}
-			this.player.body.y += 10;
+			//this.player.body.y -= 0.50;
 		}
 
 		// jump
@@ -176,7 +204,7 @@ var level_01 =
 			{
 				this.player.animations.play('jump_right');
 			}
-			this.player.body.y += 10;
+			//this.player.body.y -= 0.50;
 		}
 
 		// dead
