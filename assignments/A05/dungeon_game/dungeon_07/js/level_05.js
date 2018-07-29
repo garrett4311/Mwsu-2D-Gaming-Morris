@@ -88,7 +88,7 @@ var level_05 = {
         };
 
 
-		this.layers.collision_layer.alpha = .5;
+		this.layers.collision_layer.alpha = 0;
 
 		game.physics.arcade.enable(this.layers.collision_layer);
 
@@ -101,8 +101,28 @@ var level_05 = {
 
 		// Adding the knight atlas that contains all the animations
 		this.player = game.add.sprite(game.camera.width / 2, game.camera.height / 2, 'knight_atlas');
+		this.player.health = game.global.health;
 
-		game.global.health = 100;
+		//Healthbars
+		this.barConfig = {
+            width: 50,
+            height: 4,
+            x: (this.player.x),
+            y: (this.player.y + 35),
+            bg: {
+                color: '#FF0000'
+            },
+            bar: {
+                color: '#00FF00'
+            },
+            animationDuration: 200,
+            flipped: false
+		};
+		
+        this.myHealthBar = new HealthBar(this.game, this.barConfig);
+
+		this.enemy = game.add.sprite(1900, 1900, 'ghost');
+		this.enemy.health = 100;
 
 		// Add walking and idle animations. Different aninmations are needed based on direction of movement.
 		this.player.animations.add('walk_left', Phaser.Animation.generateFrameNames('Walk_left', 0, 8), 20, true);
@@ -120,6 +140,15 @@ var level_05 = {
 		this.player.animations.add('jumpattack_right', Phaser.Animation.generateFrameNames('JumpAttack_right', 0, 9), 20, true);
 		this.player.animations.play('idle_left');
 
+		// Add walking and idle animations for the enemy.
+		this.enemy.animations.add('walk_left', [6, 7, 8], 10, true);
+		this.enemy.animations.add('walk_right', [6, 7, 8], 10, true);
+		this.enemy.animations.add('ide_left', [0, 1, 2], 10, true);
+		this.enemy.animations.add('ide_right', [0, 1, 2], 10, true);
+		this.enemy.animations.add('attack_left', [15, 14, 13], 10, true);
+		this.enemy.animations.add('attack_right', [10, 11], 10, true);
+		this.enemy.animations.play('idle_right');
+
 		// turn physics on for player
 		game.physics.arcade.enable(this.player);
 
@@ -131,16 +160,22 @@ var level_05 = {
 		this.player.x = 2080;
 		this.player.y = 2080;
 
+		// turn physics on for enemy
+		game.physics.arcade.enable(this.enemy);
+
+		this.enemy.body.collideWorldBounds = true;
+
 		// set the anchor for sprite to middle of the view
 		this.player.anchor.setTo(0.5);
 
-		this.player.scale.setTo(0.5);
+		//this.player.scale.setTo(0.5);
 
-		this.downKey = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
-		this.upKey = game.input.keyboard.addKey(Phaser.Keyboard.UP);
-		this.leftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
-		this.rightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
-		this.spaceBar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+		k = game.input.keyboard;
+
+		this.flag = true;
+		this.walkAnim = true;
+
+		this.frame_counter = 0;
 
 		game.addPauseButton(game);
 	},
@@ -151,11 +186,107 @@ var level_05 = {
 		
 		this.getTileProperties(this.layers.collision_layer,this.player);
 
+		this.frame_counter++;
+
+		//this.checkAttack(this.player, this.enemy)
+		this.moveTowardPlayer(this.enemy, 50, this.flag, this.walkAnim);
+		this.checkPlayerTransport(this.player);
+
 		// Necessary to make sure we always check player colliding with objects
 		game.physics.arcade.collide(this.player, this.layers.collision_layer);
+		game.physics.arcade.collide(this.enemy, this.layers.collision_layer);
+		game.physics.arcade.collide(this.player, this.enemy);
+
+		if(this.player.health == 0){
+			this.walkAnim = false;
+			this.player.animations.play('dead');
+			this.timedEvent = this.time.delayedCall(500, onEvent, [], this);
+		}
+
+		if(this.enemy.health == 0){
+			this.enemy.kill();
+			this.enemy.destroy();
+			//this.sound.kill.play();
+			this.flag = false;
+		}
 
 	},
 
+	//End game after death animation
+	onEvent: function(){
+		game.state.start("gameOver");
+	},
+
+	 // Very basic move monster towards player function.
+	moveTowardPlayer: function (enemy, speed, flag, walkAnim) {
+		if(flag){
+		if (this.player.x < enemy.x && Math.abs(this.player.x - enemy.x) < 200 && walkAnim){
+			enemy.body.velocity.x = -speed;
+			enemy.animations.play('walk_left');
+			console.log("walk left");
+			}
+		else if(Math.abs(this.player.x - enemy.x) < 300 && walkAnim) {
+			enemy.body.velocity.x = speed;
+			enemy.animations.play('walk_right');
+			console.log("walk right");
+			}
+		//else{
+		//	enemy.body.velocity.x = 0;
+		//	enemy.body.velocity.y = 0;
+		//}
+		if (this.player.y < enemy.y) {
+			enemy.body.velocity.y = -speed;
+		} else {
+			enemy.body.velocity.y = speed;
+		}
+		this.checkAttack(enemy, walkAnim);
+		}
+	},
+
+	checkAttack: function (enemy, walkAnim)
+	{
+		// Get how close players are together 
+		var xClose = Math.abs(this.player.x - enemy.x);
+		var yClose = Math.abs(this.player.y - enemy.y);
+
+		if(Math.abs(xClose + yClose) < 100){
+
+		if(this.player.x < enemy.x){
+			this.walkAnim = false;
+			enemy.body.velocity.x = -50;
+			enemy.animations.play('attack_left');
+			console.log("attack left");
+			if(Math.abs(xClose + yClose) < 20){
+				if(this.frame_counter % 50 == 0){
+					this.player.health -= 5;
+					game.global.health -= 5;
+					console.log("strike left");
+				}
+			}
+			this.myHealthBar.setPercent(this.player.health / 100);
+		}
+		else{
+			console.log(Math.abs(xClose + yClose));
+			this.walkAnim = false;
+			enemy.body.velocity.x = 50;
+			enemy.animations.play('attack_right');
+			console.log("attack_right");
+			if(Math.abs(xClose + yClose) < 120){
+				if(this.frame_counter % 50 == 0){
+					this.player.health -= 5;
+					game.global.health -= 5;
+					console.log("strike right" + this.player.health);
+				}
+			}
+			this.myHealthBar.setPercent(this.player.health / 100);
+		}
+		if (this.player.y < enemy.y) {
+			enemy.body.velocity.y = -50;
+		} else {
+			enemy.body.velocity.y = 50;
+		}
+	}
+	},
 
 	/**
 	 * function to be taylored to handle player level / stage change 
@@ -194,11 +325,15 @@ var level_05 = {
 		// Instructions:
 		game.debug.text("Go all the way left to exit this level...", game.width / 2, game.height - 10);
 	},
+	
 	move: function()
 	{
 		// Each key changes the players velocity in the x or y direction
 		// and plays the proper animation. It sets the prevDir so we can
 		// face the correct way when stopped.
+
+		// Display health bar
+		this.myHealthBar.setPosition(this.player.x, this.player.y - 35);
 
 		// Walk left
 		if (k.isDown(Phaser.Keyboard.LEFT) && !k.isDown(Phaser.Keyboard.SHIFT))
@@ -284,24 +419,52 @@ var level_05 = {
 			this.prevDir = 'right'
 		}
 
-		//walk up
-		if (k.isDown(Phaser.Keyboard.UP)) 
+		// Walk up
+		if (k.isDown(Phaser.Keyboard.UP))
 		{
-			if(this.prevDir == 'left'){
+			if(k.isDown(Phaser.Keyboard.LEFT))
+			{
+				this.player.body.velocity.x = -200;
 				this.player.animations.play('walk_left');
-			}else{
+
+			}
+			else if(k.isDown(Phaser.Keyboard.RIGHT))
+			{
+				this.player.body.velocity.x = 200;
 				this.player.animations.play('walk_right');
+			}
+			else{
+				this.player.body.velocity.x = 0;
+				if(this.prevDir == 'left'){
+					this.player.animations.play('walk_left');
+				}else{
+					this.player.animations.play('walk_right');
+				}
 			}
 			this.player.body.velocity.y = -200;
 		}
 
-		// walk down
-		if (k.isDown(Phaser.Keyboard.DOWN)) 
+		// Walk down
+		if (k.isDown(Phaser.Keyboard.DOWN))
 		{
-			if(this.prevDir == 'left'){
+			if(k.isDown(Phaser.Keyboard.LEFT))
+			{
+				this.player.body.velocity.x = -200;
 				this.player.animations.play('walk_left');
-			}else{
+
+			}
+			else if(k.isDown(Phaser.Keyboard.RIGHT))
+			{
+				this.player.body.velocity.x = 200;
 				this.player.animations.play('walk_right');
+			}
+			else{
+				this.player.body.velocity.x = 0;
+				if(this.prevDir == 'left'){
+					this.player.animations.play('walk_left');
+				}else{
+					this.player.animations.play('walk_right');
+				}
 			}
 			this.player.body.velocity.y = 200;
 		}
@@ -329,6 +492,10 @@ var level_05 = {
 			}
 			else{
 				this.player.animations.play('attack_right')
+			}
+			//decrease enemy health if within attack range
+			if(Math.abs(this.player.x - this.enemy.x) < 80){
+				this.enemy.health --;
 			}
 		}
 

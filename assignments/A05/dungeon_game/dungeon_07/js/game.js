@@ -3,7 +3,8 @@ var game = new Phaser.Game(1024, 768, Phaser.Canvas, "game");
 game.global = {
     title: "Scary Dungeon",
 	score: 0,
-	best_score: 0,
+    best_score: 0,
+    health: 100,
     level:1,
     backgroundColor:"#000000",
     current_level: "level_01"

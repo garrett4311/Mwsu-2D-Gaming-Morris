@@ -21,6 +21,8 @@ var level_01 = {
 		game.load.image('elemental', 'assets/tileset/logic/creature/elemental.png');
 		game.load.image('int_rock', 'assets/tileset/building/wall/int_rock.png');
 		game.load.image('collision', 'assets/tileset/logic/collision.png');
+
+		//game.load.audio('kill', 'assets/sounds/Ouch.ogg')
 	},
 	create: function () {
 
@@ -53,7 +55,7 @@ var level_01 = {
 			collision_layer: this.map.createLayer('collision')
 		};
 
-		this.layers.collision_layer.alpha = 0
+		this.layers.collision_layer.alpha = 0;
 
 		game.physics.arcade.enable(this.layers.collision_layer);
 
@@ -70,21 +72,28 @@ var level_01 = {
 
 		// Adding the knight atlas that contains all the animations
 		this.player = game.add.sprite(game.camera.width / 2, game.camera.height / 2, 'knight_atlas');
+		this.player.health = game.global.health;
 
-		game.global.health = 100;
+		//Healthbars
+		this.barConfig = {
+            width: 50,
+            height: 4,
+            x: (this.player.x),
+            y: (this.player.y + 35),
+            bg: {
+                color: '#FF0000'
+            },
+            bar: {
+                color: '#00FF00'
+            },
+            animationDuration: 200,
+            flipped: false
+		};
+		
+        this.myHealthBar = new HealthBar(this.game, this.barConfig);
 
-		// Adding enemy (using same sprite as knight)
-		//var ex = game.width * Math.random();
-		//var ey = game.width * Math.random();
-		//if (Math.floor(Math.random() * 100) % 2 == 1) {
-		//	ex = 0;
-		//} else {
-		//	ey = 0;
-		//}
-
-		this.enemy = game.add.sprite(690, 1570, 'knight_atlas');
-
-		this.chasePlayer = false;
+		this.enemy = game.add.sprite(450, 1580, 'ghost');
+		this.enemy.health = 100;
 
 		// Add walking and idle animations. Different aninmations are needed based on direction of movement.
 		this.player.animations.add('walk_left', Phaser.Animation.generateFrameNames('Walk_left', 0, 8), 20, true);
@@ -101,15 +110,18 @@ var level_01 = {
 		this.player.animations.add('jumpattack_left', Phaser.Animation.generateFrameNames('JumpAttack_left', 0, 9), 20, true);
 		this.player.animations.add('jumpattack_right', Phaser.Animation.generateFrameNames('JumpAttack_right', 0, 9), 20, true);
 		this.player.animations.play('idle_left');
+		
+		// Death sound
+		//this.sound.kill = game.add.audio('kill');
 
 		// Add walking and idle animations for the enemy.
-		this.enemy.animations.add('walk_left', Phaser.Animation.generateFrameNames('Walk_left', 0, 8), 20, true);
-		this.enemy.animations.add('walk_right', Phaser.Animation.generateFrameNames('Walk_right', 0, 8), 20, true);
-		this.enemy.animations.add('idle_left', Phaser.Animation.generateFrameNames('Idle_left', 0, 9), 20, true);
-		this.enemy.animations.add('idle_right', Phaser.Animation.generateFrameNames('Idle_right', 0, 9), 20, true);
-		this.enemy.animations.add('attack_left', Phaser.Animation.generateFrameNames('Attack_left', 0, 9), 20, true);
-		this.enemy.animations.add('attack_right', Phaser.Animation.generateFrameNames('Attack_right', 0, 9), 20, true);
-		this.enemy.animations.play('idle_left');
+		this.enemy.animations.add('walk_left', [6, 7, 8], 10, true);
+		this.enemy.animations.add('walk_right', [6, 7, 8], 10, true);
+		this.enemy.animations.add('ide_left', [0, 1, 2], 10, true);
+		this.enemy.animations.add('ide_right', [0, 1, 2], 10, true);
+		this.enemy.animations.add('attack_left', [15, 14, 13], 10, true);
+		this.enemy.animations.add('attack_right', [10, 11], 10, true);
+		this.enemy.animations.play('idle_right');
 
 
 		// turn physics on for player
@@ -134,87 +146,116 @@ var level_01 = {
 
 		game.addPauseButton(game);
 		k = game.input.keyboard;
+
+		this.flag = true;
+		this.walkAnim = true;
+
+		this.frame_counter = 0;
 	},
 
 	update: function () {
 
 		this.move();
 
-		// if (k.isDown(67)) {
-		// 	this.chasePlayer = true;
-		// }
-		// if (this.chasePlayer) {
-		// 	this.moveTowardPlayer(this.enemy, 200);
-		// 	this.checkAttack(this.player, this.enemy);
-		// }
+		this.frame_counter++;
 
 		//this.checkAttack(this.player, this.enemy)
+		this.moveTowardPlayer(this.enemy, 50, this.flag, this.walkAnim);
 		this.checkPlayerTransport(this.player);
 
 		// Necessary to make sure we always check player colliding with objects
 		game.physics.arcade.collide(this.player, this.layers.collision_layer);
+		game.physics.arcade.collide(this.enemy, this.layers.collision_layer);
+		game.physics.arcade.collide(this.player, this.enemy);
 
+		if(this.player.health == 0){
+			this.walkAnim = false;
+			this.player.animations.play('dead');
+			this.timedEvent = this.time.delayedCall(500, onEvent, [], this);
+		}
+
+		if(this.enemy.health == 0){
+			this.enemy.kill();
+			this.enemy.destroy();
+			//this.sound.kill.play();
+			this.flag = false;
+		}
 	},
 
-	/**
-	 * Very basic move monster towards player function.
-	 * Some options to make it better would be to:
-	 *  - Parameterize it so you can pass in values to adjust behaviors
-	 *  - Add animations to make gameplay look better
-	 *  - Add some random behaviors (like swap direction based on random choices)
-	 */
-	moveTowardPlayer: function (enemy, speed) {
-		if (this.player.x < enemy.x) {
+	//End game after death animation
+	onEvent: function(){
+		game.state.start("gameOver");
+	},
+
+	 // Very basic move monster towards player function.
+	moveTowardPlayer: function (enemy, speed, flag, walkAnim) {
+		if(flag){
+		if (this.player.x < enemy.x && Math.abs(this.player.x - enemy.x) < 200 && walkAnim){
 			enemy.body.velocity.x = -speed;
-		} else {
+			enemy.animations.play('walk_left');
+			console.log("walk_left");
+			}
+		else if(Math.abs(this.player.x - enemy.x) < 300 && walkAnim) {
 			enemy.body.velocity.x = speed;
-		}
+			enemy.animations.play('walk_right');
+			console.log("walk right");
+			}
+		//else{
+		//	enemy.body.velocity.x = 0;
+		//	enemy.body.velocity.y = 0;
+		//}
 		if (this.player.y < enemy.y) {
 			enemy.body.velocity.y = -speed;
 		} else {
 			enemy.body.velocity.y = speed;
 		}
+		this.checkAttack(enemy, walkAnim);
+		}
 	},
 
-	killEnemy: function (enemy, player)
+	checkAttack: function (enemy, walkAnim)
 	{
 		// Get how close players are together 
-		var xClose = Math.abs(player.x - enemy.x);
-		var yClose = Math.abs(player.y - enemy.y);
+		var xClose = Math.abs(this.player.x - enemy.x);
+		var yClose = Math.abs(this.player.y - enemy.y);
 
-		//console.log(xClose-yClose);
-		// Based on my arbitrary value of 5, I run an attack animation
-		// More precision, and direction of attack need added.
-		if (Math.abs(xClose - yClose) < 5) 
-		{
-			enemy.body.velocity.x = 0;
-			enemy.body.velocity.y = 0;
-			enemy.destroy();
-		}
-	},
+		if(Math.abs(xClose + yClose) < 100){
 
-	/**
-	 * basic check for attack (not good)
-	 */
-	checkAttack: function (player, enemy) {
-		// Get how close players are together 
-		var xClose = Math.abs(player.x - enemy.x);
-		var yClose = Math.abs(player.y - enemy.y);
-
-		//console.log(xClose-yClose);
-		// Based on my arbitrary value of 5, I run an attack animation
-		// More precision, and direction of attack need added.
-		if (Math.abs(xClose - yClose) < 5) {
-			enemy.body.velocity.x = 0;
-			enemy.body.velocity.y = 0;
-			if (player.x < enemy.x) {
-				enemy.animations.play('attack_left');
-				this.enemy.destroy();
-			} else {
-				enemy.animations.play('attack_right');
-				this.enemy.destroy();
+		if(this.player.x < enemy.x){
+			this.walkAnim = false;
+			enemy.body.velocity.x = -50;
+			enemy.animations.play('attack_left');
+			console.log("attack left");
+			if(Math.abs(xClose + yClose) < 20){
+				if(this.frame_counter % 50 == 0){
+					this.player.health -= 5;
+					game.global.health -= 5;
+					console.log("strike left");
+				}
 			}
+			this.myHealthBar.setPercent(this.player.health / 100);
 		}
+		else{
+			console.log(Math.abs(xClose + yClose));
+			this.walkAnim = false;
+			enemy.body.velocity.x = 50;
+			enemy.animations.play('attack_right');
+			console.log("attack_right");
+			if(Math.abs(xClose + yClose) < 120){
+				if(this.frame_counter % 50 == 0){
+					this.player.health -= 5;
+					game.global.health -= 5;
+					console.log("strike right" + this.player.health);
+				}
+			}
+			this.myHealthBar.setPercent(this.player.health / 100);
+		}
+		if (this.player.y < enemy.y) {
+			enemy.body.velocity.y = -50;
+		} else {
+			enemy.body.velocity.y = 50;
+		}
+	}
 	},
 
 	/**
@@ -223,7 +264,7 @@ var level_01 = {
 	 * 			 can we make this global somehow?
 	 */
 	checkPlayerTransport: function (player) {
-		if (player.x < 411) {
+		if (player.x < 350) {
 			game.global.current_level = 'level_02';
 			game.state.start(game.global.current_level);
 		} else if (player.x > game.width) {
@@ -248,7 +289,10 @@ var level_01 = {
 		// and plays the proper animation. It sets the prevDir so we can
 		// face the correct way when stopped.
 
-		// Walk left
+		// Display health bar
+		this.myHealthBar.setPosition(this.player.x, this.player.y - 35);
+
+		// walk_left
 		if (k.isDown(Phaser.Keyboard.LEFT) && !k.isDown(Phaser.Keyboard.SHIFT))
 		{
 			if(k.isDown(Phaser.Keyboard.UP))
@@ -332,24 +376,52 @@ var level_01 = {
 			this.prevDir = 'right'
 		}
 
-		//walk up
-		if (k.isDown(Phaser.Keyboard.UP)) 
+		// Walk up
+		if (k.isDown(Phaser.Keyboard.UP))
 		{
-			if(this.prevDir == 'left'){
+			if(k.isDown(Phaser.Keyboard.LEFT))
+			{
+				this.player.body.velocity.x = -200;
 				this.player.animations.play('walk_left');
-			}else{
+
+			}
+			else if(k.isDown(Phaser.Keyboard.RIGHT))
+			{
+				this.player.body.velocity.x = 200;
 				this.player.animations.play('walk_right');
+			}
+			else{
+				this.player.body.velocity.x = 0;
+				if(this.prevDir == 'left'){
+					this.player.animations.play('walk_left');
+				}else{
+					this.player.animations.play('walk_right');
+				}
 			}
 			this.player.body.velocity.y = -200;
 		}
 
-		// walk down
-		if (k.isDown(Phaser.Keyboard.DOWN)) 
+		// Walk down
+		if (k.isDown(Phaser.Keyboard.DOWN))
 		{
-			if(this.prevDir == 'left'){
+			if(k.isDown(Phaser.Keyboard.LEFT))
+			{
+				this.player.body.velocity.x = -200;
 				this.player.animations.play('walk_left');
-			}else{
+
+			}
+			else if(k.isDown(Phaser.Keyboard.RIGHT))
+			{
+				this.player.body.velocity.x = 200;
 				this.player.animations.play('walk_right');
+			}
+			else{
+				this.player.body.velocity.x = 0;
+				if(this.prevDir == 'left'){
+					this.player.animations.play('walk_left');
+				}else{
+					this.player.animations.play('walk_right');
+				}
 			}
 			this.player.body.velocity.y = 200;
 		}
@@ -379,18 +451,9 @@ var level_01 = {
 				this.player.animations.play('attack_right')
 			}
 
-			// Get how close players are together 
-			var xClose = Math.abs(this.player.x - this.enemy.x);
-			var yClose = Math.abs(this.player.y - this.enemy.y);
-
-			//console.log(xClose-yClose);
-			// Based on my arbitrary value of 5, I run an attack animation
-			// More precision, and direction of attack need added.
-			if (Math.abs(xClose - yClose) < 5) 
-			{
-				this.enemy.body.velocity.x = 0;
-				this.enemy.body.velocity.y = 0;
-				this.enemy.destroy();
+			//decrease enemy health if within attack range
+		if(Math.abs(this.player.x - this.enemy.x) < 80){
+			this.enemy.health --;
 			}
 		}
 
