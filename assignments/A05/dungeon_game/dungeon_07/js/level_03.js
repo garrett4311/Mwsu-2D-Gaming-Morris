@@ -134,6 +134,16 @@ var level_03 = {
 		// turn physics on for enemy
 		game.physics.arcade.enable(this.enemy);
 
+		// coins
+		this.coins = game.add.group();
+		this.coins.enableBody = true;
+		this.coins.physicsBodyType = Phaser.Physics.ARCADE;
+		this.coins.create(3000, 2200, 'coin');
+		this.coins.create(3101, 1200, 'coin');
+		this.coins.create(1947, 1322, 'coin');
+		var total_coins = game.global.coins;
+
+
 		this.enemy.body.collideWorldBounds = true;
 
 		// tell camera to follow sprite now that we're on a map
@@ -166,6 +176,8 @@ var level_03 = {
 	update: function () {
 
 		this.move();
+
+		game.physics.arcade.overlap(this.player, this.coins, this.collectCoins, null, this);
 
 		this.getTileProperties(this.layers.collision_layer,this.player);
 
@@ -276,7 +288,7 @@ var level_03 = {
 	 * 			 can we make this global somehow?
 	 */
 	checkPlayerTransport: function (player) {
-		if (player.y < 300) {
+		if (player.x < 2700 && player.y > 2900) {
 			game.global.current_level = 'level_04';
 			game.state.start(game.global.current_level);
 		} else if (player.x > game.width) {
@@ -514,4 +526,11 @@ var level_03 = {
 		this.player.animations.play('dead');
 		}
 	},
+
+	collectCoins: function (player, coin)
+	{
+		game.global.coins +=1;
+		console.log(game.global.coins);
+		coin.kill();
+	}
 }

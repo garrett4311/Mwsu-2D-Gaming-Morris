@@ -127,6 +127,7 @@ var level_01 = {
 		// turn physics on for player
 		game.physics.arcade.enable(this.player);
 
+
 		// tell camera to follow sprite now that we're on a map
 		// and can move out of bounds
 		game.camera.follow(this.player);
@@ -134,6 +135,16 @@ var level_01 = {
 		// set starting location for player in some middle spot in the map
 		this.player.x = 1728;
 		this.player.y = 1024;
+
+		//coins
+		this.coins = game.add.group();
+		this.coins.enableBody = true;
+		this.coins.physicsBodyType = Phaser.Physics.ARCADE;
+		this.coins.create(3500, 600, 'coin');
+		this.coins.create(3533, 1370, 'coin');
+		this.coins.create(1764, 2282, 'coin');
+		this.coins.create(852, 1564, 'coin');
+		var total_coins = game.global.coins;
 
 		// turn physics on for enemy
 		game.physics.arcade.enable(this.enemy);
@@ -156,6 +167,8 @@ var level_01 = {
 	update: function () {
 
 		this.move();
+
+		game.physics.arcade.overlap(this.player, this.coins, this.collectCoins, null, this);
 
 		this.frame_counter++;
 
@@ -264,7 +277,7 @@ var level_01 = {
 	 * 			 can we make this global somehow?
 	 */
 	checkPlayerTransport: function (player) {
-		if (player.x < 350) {
+		if (player.x < 3000 && player.y <404) {
 			game.global.current_level = 'level_02';
 			game.state.start(game.global.current_level);
 		} else if (player.x > game.width) {
@@ -490,4 +503,11 @@ var level_01 = {
 		this.player.animations.play('dead');
 		}
 	},
+
+	collectCoins: function (player, coin)
+	{
+		game.global.coins +=1;
+		console.log(game.global.coins);
+		coin.kill();
+	}
 }

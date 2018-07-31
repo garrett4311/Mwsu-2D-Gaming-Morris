@@ -18,6 +18,7 @@ var preLoad = {
 		game.load.image('pause', 'assets/images/pause.png');			
 		game.load.image('splash', 'assets/images/splash_screen_1024.jpg');
 		game.load.image('gameOver', 'assets/images/game_over_800.png');
+		game.load.image('coin', 'assets/images/coin.png');
 
 		// load atlas or sprites here: 
 		//////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ var gameOver = {
 			}, 1000, Phaser.Easing.Bounce.Out).start()
 		} else {
 			var message = game.add.bitmapText(w / 2, -100, 'mainFont', '', 30)
-			message.text = 'Game Over \nYou scored: ' + game.global.score + '\nBest: ' + game.global.best_score + '\nTap to try again'
+			message.text = 'Game Over \nYou scored: ' + game.global.coins + '\nBest: ' + game.global.best_score + '\nTap to try again'
 			message.anchor.setTo(0.5, 0.5)
 			game.add.tween(message).to({
 				y: h / 2 - 20

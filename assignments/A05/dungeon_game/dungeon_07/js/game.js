@@ -6,6 +6,7 @@ game.global = {
     best_score: 0,
     health: 100,
     level:1,
+    coins: 0,
     backgroundColor:"#000000",
     current_level: "level_01"
 }

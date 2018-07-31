@@ -170,6 +170,14 @@ var level_04 = {
 		// turn physics on for enemy
 		game.physics.arcade.enable(this.enemy);
 
+		// coins
+		this.coins = game.add.group();
+		this.coins.enableBody = true;
+		this.coins.physicsBodyType = Phaser.Physics.ARCADE;
+		this.coins.create(2048, 1651, 'coin');
+		this.coins.create(1411, 1664, 'coin');
+		var total_coins = game.global.coins;
+
 		this.enemy.body.collideWorldBounds = true;
 
 		k = game.input.keyboard;
@@ -185,6 +193,8 @@ var level_04 = {
 	update: function () {
 
 		this.move();
+
+		game.physics.arcade.overlap(this.player, this.coins, this.collectCoins, null, this);
 
 		this.getTileProperties(this.layers.collision_layer,this.player);
 
@@ -534,4 +544,11 @@ var level_04 = {
 		this.player.animations.play('dead');
 		}
 	},
+
+	collectCoins: function (player, coin)
+	{
+		game.global.coins +=1;
+		console.log(game.global.coins);
+		coin.kill();
+	}
 }

@@ -163,6 +163,15 @@ var level_05 = {
 		// turn physics on for enemy
 		game.physics.arcade.enable(this.enemy);
 
+		// coins
+		this.coins = game.add.group();
+		this.coins.enableBody = true;
+		this.coins.physicsBodyType = Phaser.Physics.ARCADE;
+		this.coins.create(1553, 1724, 'coin');
+		this.coins.create(2580, 2160, 'coin');
+		this.coins.create(2743, 2596, 'coin');
+		var total_coins = game.global.coins;
+
 		this.enemy.body.collideWorldBounds = true;
 
 		// set the anchor for sprite to middle of the view
@@ -183,6 +192,8 @@ var level_05 = {
 	update: function () {
 
 		this.move();
+
+		game.physics.arcade.overlap(this.player, this.coins, this.collectCoins, null, this);
 		
 		this.getTileProperties(this.layers.collision_layer,this.player);
 
@@ -295,7 +306,7 @@ var level_05 = {
 	 */
 	checkPlayerTransport: function (player) {
 		if (player.x < 1411) {
-			game.global.current_level = 'level_03';
+			game.global.current_level = 'gameOver';
 			game.state.start(game.global.current_level);
 		} else if (player.x > game.width) {
 			// go somewhere
@@ -532,4 +543,11 @@ var level_05 = {
 		this.player.animations.play('dead');
 		}
 	},
+
+	collectCoins: function (player, coin)
+	{
+		game.global.coins +=1;
+		console.log(game.global.coins);
+		coin.kill();
+	}
 }
