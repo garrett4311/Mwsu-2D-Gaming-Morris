@@ -14,14 +14,14 @@ var Hud = function (game, width,height,title=null,location=null) {
     this.hud_height = height;
     this.hud = game.add.graphics(0, 0); // a graphics object that represents the hud (rectangle really)
     this.title_text = "Health & Coins"; // title text 
-    this.font_size = 16; // default font size
+    this.font_size = 20; // default font size
     this.hud_objs = []; // array of objects so we can delete them and re-create when the game camera moves.
     this.items = [];
 
     // Need font for the text
-    this.game.load.bitmapFont('mainFont', 'assets/fonts/ganonwhite/font.png', 'assets/fonts/ganonwhite/font.xml');
+    this.game.load.bitmapFont('mainFont', 'assets/fonts/return_of_ganon/font.png', 'assets/fonts/return_of_ganon/font.xml');
     
-    // Default location is upper left
+    // Default location is upper right
     if(location == null){
         location = 'upper_right';
     }
