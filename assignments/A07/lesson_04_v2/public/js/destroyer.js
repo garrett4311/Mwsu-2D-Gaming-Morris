@@ -371,7 +371,7 @@ var destroyer = {
 			this.player1.ship.x -= 10;
 		}
 
-		if (this.player1.ship.y > this.player2.ship.y)
+		if (this.player1.ship.y < this.player2.ship.y)
 			{this.player2.health -=10;}
 		else
 			{this.player1.health -=10;}
