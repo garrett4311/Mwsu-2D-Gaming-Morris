@@ -1,0 +1,40 @@
+var config = {
+	game_title: "Destroyer Of Worlds and Stuff",
+	bg_color: '#000000',
+	maxWidth: 1000,
+	maxHeight: 750,
+	minWidth: 500,
+	minHeight: 166,
+	score: 0,
+	best_score: 0,
+	obstacle_id: 0,
+	obstacle_icons: ['planet1', 'planet2', 'planet3', 'planet4', 'rock', 'blue', 'red'],
+	obstacle_icons2: ['rock', 'blue', 'red'],
+	obstacle_icons1: ['planet1', 'planet2', 'planet3', 'planet4'],
+	level: 1
+}
+
+var game = new Phaser.Game(config.max_width, config.max_height, Phaser.Canvas, "game");
+
+game.players = [];
+game.multiPlayersObj = {};
+game.num_other_players = 0;
+
+game.globals = config;
+
+game.state.add("boot", boot);
+game.state.add("preload", preload);
+game.state.add("mainMenu", mainMenu);
+game.state.add("destroyer", destroyer);
+game.state.add("gameOver", gameOver);
+game.state.add("gameOver2", gameOver2);
+game.state.start("boot");
+
+
+function random(n) {
+	return Math.floor(Math.random() * (n + 1))
+}
+
+function randomInt(min=0,max=9007199254740992){
+    return Math.floor(max * Math.random()) + min;
+}
